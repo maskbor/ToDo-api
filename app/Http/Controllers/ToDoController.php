@@ -12,14 +12,14 @@ class ToDoController extends Controller
     public function index(Request $request)
     {
         $list = ToDo::select();
-        $list = $list->where('id_user', Auth::user()->id);
-        /*if(isset($_GET['sortColumn']) && isset($_GET['sortDirection']))
-            $list = $list->orderBy($_GET['sortColumn'], $_GET['sortDirection']==='ascending'?'asc':'desc');
-        */
         if(isset($_GET['findText'])){
-            $list = $list->where('title', 'like', '%'.$_GET['findText'].'%');
-            $list = $list->orWhere('description', 'like', '%'.$_GET['findText'].'%');
-        } 
+            $list = $list->where(function ($query) {
+                $query->orWhere('title', 'like', '%'.$_GET['findText'].'%')
+                      ->orWhere('description', 'like', '%'.$_GET['findText'].'%')
+                      ->orWhere('created_at', 'like', '%'.$_GET['findText'].'%');
+            })->where('id_user', Auth::user()->id);
+        } else $list = $list->where('id_user', Auth::user()->id);
+        
         $list = $list->paginate(100);
 
         return response()->json(
@@ -30,7 +30,6 @@ class ToDoController extends Controller
 
     public function item(Request $request, $id)
     {
-        //$groups = isset($_GET['groups'])?json_decode($_GET['groups'], false):[0];
         $item = ToDo::find($id);
 
         return response()->json(
